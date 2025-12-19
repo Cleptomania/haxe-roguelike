@@ -1,0 +1,9 @@
+-cp src
+-lib heaps
+-lib hlsdl
+-hl roguelike.hl
+
+-D windowTitle=Roguelike Tutorial
+-D windowSize=800x600
+
+-main roguelike.Main
