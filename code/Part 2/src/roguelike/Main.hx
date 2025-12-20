@@ -1,7 +1,9 @@
 package roguelike;
 
-import sdl.GameController;
-import h2d.Scene;
+import hrl.CP437.to_cp437;
+import hrl.Color;
+import hrl.terminal.TerminalBuilder;
+import hrl.terminal.console.Console;
 
 import echoes.Echoes;
 import echoes.Entity;
@@ -9,7 +11,9 @@ import echoes.System;
 
 var SCREEN_WIDTH: Int = 80;
 var SCREEN_HEIGHT: Int = 50;
-var FIELD_SIZE: Int;
+var FONT_FILE: String = "terminal8x8.png";
+var TILE_WIDTH: Int = 8;
+var TILE_HEIGHT: Int = 8;
 
 @:structInit class Position {
     public var x: Int;
@@ -18,6 +22,18 @@ var FIELD_SIZE: Int;
     public function new(x: Int, y: Int) {
         this.x = x;
         this.y = y;
+    }
+}
+
+@:structInit class Renderable {
+    public var glyph: Int;
+    public var fg: RGBA;
+    public var bg: RGBA;
+
+    public function new(glyph: Int, fg: RGBA, bg: RGBA) {
+        this.glyph = glyph;
+        this.fg = fg;
+        this.bg = bg;
     }
 }
 
@@ -30,86 +46,66 @@ class GameState {
 }
 
 class RenderSystem extends System {
-    public final scene: Scene;
 
-    public function new(scene: Scene) {
+    private var console: Console;
+
+    public function new(console: Console) {
         super();
-        this.scene = scene;
+        this.console = console;
     }
 
-    @:add private function onObjectAdded(object: h2d.Object): Void {
-        scene.addChild(object);
-    }
-
-    @:add private function onTextAdded(text: h2d.Text): Void {
-        onObjectAdded(text);
-    }
-
-    @:remove private function onObjectRemoved(object: h2d.Object): Void {
-        scene.removeChild(object);
-    }
-
-    @:remove private function onTextRemoved(text: h2d.Text): Void {
-        onObjectRemoved(text);
-    }
-
-    @:update private function updateObjectPosition(object: h2d.Object, position: Position): Void {
-        object.setPosition(position.x * FIELD_SIZE, position.y * FIELD_SIZE);
-    }
-
-    @:update private function updateTextPosition(text: h2d.Text, position: Position): Void {
-        updateObjectPosition(text, position);
+    @:update private function updateRenderedPosition(renderable: Renderable, position: Position) {
+        this.console.set(position.x, position.y, renderable.glyph, renderable.fg, renderable.bg);
     }
 }
 
-class Main extends hxd.App {
+class Main extends hrl.App {
 
     public var state: GameState = new GameState();
+    public var console: Console;
 
-    override function init(): Void {
-        FIELD_SIZE = getFont().size;
-        var window_width = FIELD_SIZE * SCREEN_WIDTH;
-        var window_height = FIELD_SIZE * SCREEN_HEIGHT;
+    public var delta_counter: Float = 0;
 
-        hxd.Window.getInstance().resize(window_width, window_height);
-        hxd.Window.getInstance().addEventTarget(onEvent);
-        
-        new RenderSystem(this.s2d).activate();
+    public function new() {
+        var builder = TerminalBuilder.simple(SCREEN_WIDTH, SCREEN_HEIGHT, "Roguelike Tutorial", TILE_WIDTH, TILE_HEIGHT, FONT_FILE);
+        super(builder.build());
+        this.console = terminal.console;
+
+        Echoes.init(0);
+        new RenderSystem(this.console).activate();
 
         state.player = new Entity();
-        state.player.add(new h2d.Text(getFont()));
-        state.player.get(h2d.Text).text = "@";
-        state.player.get(h2d.Text).textColor = 0xFFFFFF00;
+        state.player.add(new Renderable(to_cp437("@"), Color.YELLOW, Color.BLACK));
         state.player.add(new Position(40, 25));
 
         for (i in 0...10) {
             var new_entity: Entity = new Entity();
-            new_entity.add(new h2d.Text(getFont()));
-            new_entity.get(h2d.Text).text = "@";
-            new_entity.get(h2d.Text).textColor = 0xFFFF0000;
+            new_entity.add(new Renderable(to_cp437("@"), Color.RED, Color.BLACK));
             new_entity.add(new Position(i * 7, 20));
         }
     }
 
-    function onEvent(event: hxd.Event) {
-        switch(event.kind) {
-            case EKeyDown:
-                onKeyDown(event.keyCode);
-            case _:
+    public function tick(delta: Float): Void {
+        delta_counter += delta;
+        this.console.clear();
+
+        if (delta_counter > 0.1) { // We only want to run input 10 times per second, otherwise it's way too fast
+            playerInput();
+            delta_counter = 0;
         }
+
+        Echoes.update();
     }
 
-    function onKeyDown(keyCode: Int) {
-        switch(keyCode) {
-            case hxd.Key.UP | hxd.Key.W:
-                movePlayer(0, -1);
-            case hxd.Key.DOWN | hxd.Key.S:
-                movePlayer(0, 1);
-            case hxd.Key.LEFT | hxd.Key.A:
-                movePlayer(-1, 0);
-            case hxd.Key.RIGHT | hxd.Key.D:
-                movePlayer(1, 0);
-        }
+    function playerInput() {
+        if (isKeyDown(hrl.Key.UP) || isKeyDown(hrl.Key.W))
+            movePlayer(0, -1);
+        if (isKeyDown(hrl.Key.DOWN) || isKeyDown(hrl.Key.S))
+            movePlayer(0, 1);
+        if (isKeyDown(hrl.Key.LEFT) || isKeyDown(hrl.Key.A))
+            movePlayer(-1, 0);
+        if (isKeyDown(hrl.Key.RIGHT) || isKeyDown(hrl.Key.D))
+            movePlayer(1, 0);
     }
 
     function movePlayer(deltaX: Int, deltaY: Int) {
@@ -118,12 +114,7 @@ class Main extends hxd.App {
         pos.y = Std.int(Math.min(SCREEN_HEIGHT - 1, Math.max(0, pos.y + deltaY)));
     }
 
-    function getFont(): h2d.Font {
-        return hxd.res.DefaultFont.get();
-    }
-
     static function main(): Void {
-        Echoes.init();
         new Main();
     }
 }
