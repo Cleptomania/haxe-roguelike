@@ -1,0 +1,6 @@
+-cp src
+-lib haxerl
+-lib echoes
+-hl roguelike.hl
+
+-main roguelike.Main
