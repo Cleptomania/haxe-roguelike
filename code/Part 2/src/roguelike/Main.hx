@@ -62,14 +62,12 @@ class RenderSystem extends System {
 class Main extends hrl.App {
 
     public var state: GameState = new GameState();
-    public var console: Console;
 
     public var delta_counter: Float = 0;
 
     public function new() {
         var builder = TerminalBuilder.simple(SCREEN_WIDTH, SCREEN_HEIGHT, "Roguelike Tutorial", TILE_WIDTH, TILE_HEIGHT, FONT_FILE);
         super(builder.build());
-        this.console = terminal.console;
 
         Echoes.init(0);
         new RenderSystem(this.console).activate();
