@@ -115,17 +115,9 @@ class Main extends hrl.App {
         return map;
     }
 
-    public function tick(delta: Float): Void {
-        delta_counter += delta;
+    override function tick(delta: Float): Void {
         this.console.clear();
-
         drawMap();
-
-        if (delta_counter > 0.1) { // We only want to run input 10 times per second, otherwise it's way too fast
-            playerInput();
-            delta_counter = 0;
-        }
-
         Echoes.update();
     }
 
@@ -147,15 +139,17 @@ class Main extends hrl.App {
         }
     }
 
-    function playerInput() {
-        if (isKeyDown(hrl.Key.UP) || isKeyDown(hrl.Key.W))
-            movePlayer(0, -1);
-        if (isKeyDown(hrl.Key.DOWN) || isKeyDown(hrl.Key.S))
-            movePlayer(0, 1);
-        if (isKeyDown(hrl.Key.LEFT) || isKeyDown(hrl.Key.A))
-            movePlayer(-1, 0);
-        if (isKeyDown(hrl.Key.RIGHT) || isKeyDown(hrl.Key.D))
-            movePlayer(1, 0);
+    override function onKeyDown(event: hrl.Event.KeyDown): Void {
+        switch (event.keyCode) {
+            case hrl.Key.UP | hrl.Key.W:
+                movePlayer(0, -1);
+            case hrl.Key.DOWN | hrl.Key.S:
+                movePlayer(0, 1);
+            case hrl.Key.LEFT | hrl.Key.A:
+                movePlayer(-1, 0);
+            case hrl.Key.RIGHT | hrl.Key.D:
+                movePlayer(1, 0);
+        }
     }
 
     function movePlayer(deltaX: Int, deltaY: Int) {

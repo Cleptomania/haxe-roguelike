@@ -1,7 +1,6 @@
 package roguelike;
 
 import hrl.terminal.TerminalBuilder;
-import hrl.terminal.console.Console;
 
 class Main extends hrl.App {
 
@@ -10,7 +9,7 @@ class Main extends hrl.App {
         super(builder.build());
     }
 
-    public function tick(delta: Float): Void {
+    override function tick(delta: Float): Void {
         this.console.clear();
         this.console.print(1, 1, "Hello World!");
     }
